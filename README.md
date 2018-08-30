@@ -269,3 +269,60 @@ $ npm install --save @ionic-native/camera
             }
 
 
+--------------------------------------------------------------------------------------------------
+
+
+In server-side you can use your preferred Back-end technology by receiving req.file.<you_file_name> and the token in the header 
+
+And here is an example using Node.js (we use Multer, express.js and mongoose)
+
+        var multer = require('multer')
+
+        var storage = multer.diskStorage({
+            destination: function (req, file, cb) {
+                cb(null, './uploads/')
+            },
+            filename:function(req,file,cb)    
+            {
+               var pathname = file.originalname.split('#');
+               var filename = pathname[1];
+            if(filename!=undefined)
+                    cb(null, filename);            
+            }
+            });
+
+
+        var upload = multer({ storage: storage})
+
+        router.post("/uploadsImage",[auth,upload.single('image')] , async (req, res) => {
+
+            if (!req.file) return res.status(400).send({ "message": "image is required" })
+            file = req.file.path
+
+            let acc = await Account.findOneAndUpdate({ _id: req.decoded._id}, {
+
+                       image: file
+
+            }, { new: true })
+
+            if (!acc) {
+                fs.unlink(file);
+                return res.status(400).send({  message: "Utilisateur introuvable !" })
+
+            }
+
+            return res.send({path:file})
+
+
+        })
+
+        router.get("/image/:id", [auth,objectId], async (req, res) => {
+            let account = await Account.findOne({ _id: req.params.id });
+            if (!account) return res.status(404).send({ message: "Utilisateur introuvable !" })
+
+            res.send({path:account.image})
+
+        })
+
+
+
