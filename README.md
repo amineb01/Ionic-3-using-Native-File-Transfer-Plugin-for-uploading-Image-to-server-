@@ -11,7 +11,6 @@ $ npm install --save @ionic-native/camera
 
 
                     import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-                    import { User } from '../../models/User';
                     import { AccountsProvider } from '../../providers/accounts';
                     import { Subscription } from 'rxjs/Subscription';
                     import { Storage } from '@ionic/storage';
@@ -177,18 +176,18 @@ $ npm install --save @ionic-native/camera
 
 4. in app.module.ts
   
-  .... 
-  providers: [
-    StatusBar,
-    SplashScreen,
-    AccountsProvider ,
-    FileTransfer,
-      FileTransferObject,
-      File,
-      Camera
-  
-  ]
-....
+            .... 
+            providers: [
+              StatusBar,
+              SplashScreen,
+              AccountsProvider ,
+              FileTransfer,
+                FileTransferObject,
+                File,
+                Camera
+
+            ]
+          ....
 
 
 
@@ -196,81 +195,77 @@ $ npm install --save @ionic-native/camera
 
 
 ------------------------------------------------------------------------------------------------------------------------
- 4. in services/AccountsProvider.ts
+5. in services/AccountsProvider.ts
  
  
- import { Http, Headers, Response, } from '@angular/http';
+           import { Http, Headers, Response, } from '@angular/http';
+          import { pipe } from 'rxjs';
+          import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer';
+
+          import { Injectable } from '@angular/core';
+          import 'rxjs/add/operator/map';
+          import 'rxjs/add/operator/do';
+          import { catchError } from 'rxjs/operators/catchError';
+          import { Observable } from 'rxjs/Observable';
+          import { HttpErrorResponse } from '@angular/common/http/src/response';
+          import "rxjs/add/observable/throw";
+          import "rxjs/add/operator/catch";
+          import { RequestOptions } from '@angular/http/src/base_request_options';
+
+          import { Storage } from '@ionic/storage';
+
+          import * as jwt_decode from "jwt-decode";
 
 
-import { pipe } from 'rxjs';
-// operators all come from `rxjs/operators`
+          let apiUrl = "<your_server_adress>"
 
-import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer';
+          /*
+            Generated class for the AccountsProvider provider.
 
-import { Injectable } from '@angular/core';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/do';
-import { catchError } from 'rxjs/operators/catchError';
-import { Observable } from 'rxjs/Observable';
-import { HttpErrorResponse } from '@angular/common/http/src/response';
-import "rxjs/add/observable/throw";
-import "rxjs/add/operator/catch";
-import { RequestOptions } from '@angular/http/src/base_request_options';
+            See https://angular.io/guide/dependency-injection for more info on providers
+            and Angular DI.
+          */
+          @Injectable()
+          export class AccountsProvider {
 
-import { Storage } from '@ionic/storage';
+            constructor(private localStorageService: Storage, public http: Http,  private transfer: FileTransfer,) {
+              console.log('Hello AccountsProvider Provider');
+            }
 
-import * as jwt_decode from "jwt-decode";
+            uploadFile(token,imageURI) {
+              const fileTransfer: FileTransferObject = this.transfer.create();
 
+              let options: FileUploadOptions = {
+                fileKey: 'image',
+                httpMethod:'POST',
+                fileName:'user_step4#'+ Date.now()+".jpg",
+                chunkedMode: false,
+                mimeType: "image/jpeg",
+                headers: {'x-token':token}
+              }
 
-let apiUrl = "<your_server_adress>"
+             return fileTransfer.upload(imageURI, apiUrl + 'accounts/uploadsImage', options)
 
-/*
-  Generated class for the AccountsProvider provider.
-
-  See https://angular.io/guide/dependency-injection for more info on providers
-  and Angular DI.
-*/
-@Injectable()
-export class AccountsProvider {
-
-  constructor(private localStorageService: Storage, public http: Http,  private transfer: FileTransfer,) {
-    console.log('Hello AccountsProvider Provider');
-  }
- 
-  uploadFile(token,imageURI) {
-    const fileTransfer: FileTransferObject = this.transfer.create();
-
-    let options: FileUploadOptions = {
-      fileKey: 'image',
-      httpMethod:'POST',
-      fileName:'user_step4#'+ Date.now()+".jpg",
-      chunkedMode: false,
-      mimeType: "image/jpeg",
-      headers: {'x-token':token}
-    }
-
-   return fileTransfer.upload(imageURI, apiUrl + 'accounts/uploadsImage', options)
- 
-  }
+            }
 
 
-  getimage(id: string, token: string) {
-    let headers = new Headers({ 'Content-Type': 'application/json', 'token': token });
-    headers.append('x-token', token)
+            getimage(id: string, token: string) {
+              let headers = new Headers({ 'Content-Type': 'application/json', 'token': token });
+              headers.append('x-token', token)
 
-    return this.http.get(apiUrl + "accounts/image/" + id, { headers: headers })
-      .map((response: Response) => {
+              return this.http.get(apiUrl + "accounts/image/" + id, { headers: headers })
+                .map((response: Response) => {
 
-        let res = response.json().path
-        if (res) {
-          return this. getUrl(res)
-        }else{
-          return "http://placehold.it/300/300"
-        }
+                  let res = response.json().path
+                  if (res) {
+                    return this. getUrl(res)
+                  }else{
+                    return "http://placehold.it/300/300"
+                  }
 
 
-      })
-      .catch((error: Response) => Observable.throw(error.json()) || "server error");
-  }
+                })
+                .catch((error: Response) => Observable.throw(error.json()) || "server error");
+            }
 
 
